@@ -24,35 +24,32 @@ def send_affirmation(current_time):
     message = affirmations[current_time]
     bot.send_message(CHAT_ID, message)
 
-# 🌐 Flask для Replit
-app = Flask('')
+# 🕒 Цикл афірмацій у окремому потоці
+def affirmation_loop():
+    sent_today = set()
+    while True:
+        now = datetime.datetime.now()
+        current_time = now.strftime("%H:%M")
+
+        if current_time in affirmations and current_time not in sent_today:
+            send_affirmation(current_time)
+            sent_today.add(current_time)
+
+        if current_time == "00:01":
+            sent_today.clear()
+
+        time.sleep(30)
+
+# 🌐 Flask для Railway
+app = Flask(__name__)
 
 @app.route('/')
 def home():
     return "Я живий!"
 
+# 🚀 Запуск Flask і афірмацій у потоках
 def run():
     app.run(host='0.0.0.0', port=8080)
 
-def keep_alive():
-    thread = threading.Thread(target=run)
-    thread.start()
-
-# 🔁 Запуск
-keep_alive()
-
-# 🕒 Основний цикл
-sent_today = set()
-
-while True:
-    now = datetime.datetime.now()
-    current_time = now.strftime("%H:%M")
-
-    if current_time in affirmations and current_time not in sent_today:
-        send_affirmation(current_time)
-        sent_today.add(current_time)
-
-    if current_time == "00:01":
-        sent_today.clear()
-
-    time.sleep(30)
+threading.Thread(target=run).start()
+threading.Thread(target=affirmation_loop).start()
